@@ -4,8 +4,6 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export default function ReportsPage() {
   const [selectedReport, setSelectedReport] = React.useState("");
-  const [startDate, setStartDate] = React.useState("");
-  const [endDate, setEndDate] = React.useState("");
   const [isGenerating, setIsGenerating] = React.useState(false);
   const [isDownloading, setIsDownloading] = React.useState(false);
   const [downloadReady, setDownloadReady] = React.useState(false);
@@ -57,11 +55,6 @@ export default function ReportsPage() {
   const handleGenerate = async () => {
     if (!selectedReport) return;
 
-    if ((startDate && !endDate) || (!startDate && endDate)) {
-      alert("Please select both Start Date and End Date.");
-      return;
-    }
-
     try {
       setIsGenerating(true);
       setDownloadReady(false);
@@ -71,7 +64,7 @@ export default function ReportsPage() {
       const response = await fetch("/api/github/dispatch", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ workflow: selectedReport, startDate, endDate }),
+        body: JSON.stringify({ workflow: selectedReport }),
       });
 
       if (!response.ok) {
@@ -184,34 +177,6 @@ export default function ReportsPage() {
           <option value="inventory">Ar report</option>
           <option value="customers">Partner Master</option>
         </select>
-      </div>
-
-      <div style={{ marginBottom: "1rem" }}>
-        <div style={{ marginBottom: "0.75rem" }}>
-          <label htmlFor="start-date" style={{ display: "block" }}>
-            Start Date
-          </label>
-          <input
-            id="start-date"
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            style={{ marginTop: "0.25rem", width: "100%", padding: "0.25rem" }}
-          />
-        </div>
-
-        <div>
-          <label htmlFor="end-date" style={{ display: "block" }}>
-            End Date
-          </label>
-          <input
-            id="end-date"
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            style={{ marginTop: "0.25rem", width: "100%", padding: "0.25rem" }}
-          />
-        </div>
       </div>
 
       <div style={{ display: "flex", gap: "0.5rem" }}>
