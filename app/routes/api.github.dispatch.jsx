@@ -71,7 +71,12 @@ export const action = async ({ request }) => {
     }
 
     const body = { ref: "main" };
-    if (Object.keys(inputs).length) {
+
+    // Only include workflow_dispatch inputs for workflows that declare them.
+    // Some workflows (in this repo or remote) may not accept inputs and
+    // GitHub will reject dispatches that include unexpected inputs (422).
+    const workflowsWithInputs = new Set(["ar-aging-export.yml", "ar-aging-export"]);
+    if (Object.keys(inputs).length && workflowsWithInputs.has(workflowFile)) {
       body.inputs = inputs;
     }
 
