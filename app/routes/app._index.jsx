@@ -12,6 +12,16 @@ export default function ReportsPage() {
   const [generatedSince, setGeneratedSince] = React.useState("");
   const [statusMessage, setStatusMessage] = React.useState("");
 
+  const isInventoryDateRangeIncomplete =
+    selectedReport === "inventory" &&
+    ((startDate && !endDate) || (!startDate && endDate));
+
+  const isInventoryDateRangeInvalid =
+    selectedReport === "inventory" &&
+    startDate &&
+    endDate &&
+    startDate > endDate;
+
   const isInventoryDateRangeInvalid =
     selectedReport === "inventory" &&
     startDate &&
@@ -243,6 +253,11 @@ export default function ReportsPage() {
               Start date must be on or before end date.
             </p>
           )}
+          {isInventoryDateRangeIncomplete && (
+            <p style={{ marginTop: "0.5rem", color: "#b91c1c" }}>
+              Please enter both start and end date, or leave both blank.
+            </p>
+          )}
         </div>
       )}
 
@@ -255,7 +270,7 @@ export default function ReportsPage() {
           disabled={
             !selectedReport ||
             isGenerating ||
-            (selectedReport === "inventory" && (!startDate || !endDate))
+            (selectedReport === "inventory" && isInventoryDateRangeIncomplete)
           }
         >
           {isGenerating
