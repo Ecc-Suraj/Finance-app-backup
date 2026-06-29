@@ -3,25 +3,45 @@
 export const action = async ({ request }) => {
   const contentType = request.headers.get("content-type")?.split(";")[0] || "";
   let workflow;
+  let startDate;
+  let endDate;
+  let start_date;
+  let end_date;
 
   try {
     if (contentType === "application/json" || contentType === "application/ld+json") {
       const body = await request.json();
       workflow = body?.workflow;
+      startDate = body?.startDate;
+      endDate = body?.endDate;
+      start_date = body?.start_date || body?.["start-date"];
+      end_date = body?.end_date || body?.["end-date"];
     } else if (
       contentType === "application/x-www-form-urlencoded" ||
       contentType === "multipart/form-data"
     ) {
       const formData = await request.formData();
       workflow = formData.get("workflow");
+      startDate = formData.get("startDate");
+      endDate = formData.get("endDate");
+      start_date = formData.get("start_date");
+      end_date = formData.get("end_date");
     } else {
       const text = await request.text();
       try {
         const body = JSON.parse(text || "{}");
         workflow = body?.workflow;
+        startDate = body?.startDate;
+        endDate = body?.endDate;
+        start_date = body?.start_date;
+        end_date = body?.end_date;
       } catch {
         const params = new URLSearchParams(text);
         workflow = params.get("workflow");
+        startDate = params.get("startDate");
+        endDate = params.get("endDate");
+        start_date = params.get("start_date") || params.get("start-date");
+        end_date = params.get("end_date") || params.get("end-date");
       }
     }
   } catch (error) {
@@ -82,6 +102,26 @@ export const action = async ({ request }) => {
   }
 
   const dispatchWorkflow = async (workflowFile) => {
+    const inputs = {};
+    const startDateValue = startDate || start_date;
+    const endDateValue = endDate || end_date;
+
+    if (startDateValue) {
+      inputs["start-date"] = startDateValue;
+      inputs.start_date = startDateValue;
+      inputs.startDate = startDateValue;
+    }
+    if (endDateValue) {
+      inputs["end-date"] = endDateValue;
+      inputs.end_date = endDateValue;
+      inputs.endDate = endDateValue;
+    }
+
+    const body = { ref: "main" };
+    if (Object.keys(inputs).length) {
+      body.inputs = inputs;
+    }
+
     const response = await fetch(
       `https://api.github.com/repos/${owner}/${repo}/actions/workflows/${encodeURIComponent(
         workflowFile,
@@ -93,7 +133,7 @@ export const action = async ({ request }) => {
           Accept: "application/vnd.github+json",
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ ref: "main" }),
+        body: JSON.stringify(body),
       },
     );
 

@@ -4,11 +4,19 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export default function ReportsPage() {
   const [selectedReport, setSelectedReport] = React.useState("");
+  const [startDate, setStartDate] = React.useState("");
+  const [endDate, setEndDate] = React.useState("");
   const [isGenerating, setIsGenerating] = React.useState(false);
   const [isDownloading, setIsDownloading] = React.useState(false);
   const [downloadReady, setDownloadReady] = React.useState(false);
   const [generatedSince, setGeneratedSince] = React.useState("");
   const [statusMessage, setStatusMessage] = React.useState("");
+
+  const isInventoryDateRangeInvalid =
+    selectedReport === "inventory" &&
+    startDate &&
+    endDate &&
+    startDate > endDate;
 
   const checkReportReady = async (reportType, since) => {
     const readyUrl = `/api/reports/download?type=${encodeURIComponent(
@@ -61,10 +69,28 @@ export default function ReportsPage() {
       setGeneratedSince("");
       setStatusMessage("Starting report generation...");
 
+      if (isInventoryDateRangeInvalid) {
+        throw new Error("Start date must be on or before end date.");
+      }
+
+      const payload = { workflow: selectedReport };
+      if (selectedReport === "inventory") {
+        if (startDate) {
+          payload.startDate = startDate;
+          payload.start_date = startDate;
+          payload["start-date"] = startDate;
+        }
+        if (endDate) {
+          payload.endDate = endDate;
+          payload.end_date = endDate;
+          payload["end-date"] = endDate;
+        }
+      }
+
       const response = await fetch("/api/github/dispatch", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ workflow: selectedReport }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
@@ -179,13 +205,58 @@ export default function ReportsPage() {
         </select>
       </div>
 
+      {selectedReport === "inventory" && (
+        <div style={{ marginBottom: "1rem" }}>
+          <label htmlFor="start-date" style={{ display: "block" }}>
+            Start date
+          </label>
+          <input
+            id="start-date"
+            type="date"
+            value={startDate}
+            onChange={(e) => {
+              setStartDate(e.target.value);
+              setDownloadReady(false);
+              setGeneratedSince("");
+              setStatusMessage("");
+            }}
+            style={{ marginTop: "0.5rem", width: "100%", padding: "0.25rem" }}
+          />
+
+          <label htmlFor="end-date" style={{ display: "block", marginTop: "1rem" }}>
+            End date
+          </label>
+          <input
+            id="end-date"
+            type="date"
+            value={endDate}
+            onChange={(e) => {
+              setEndDate(e.target.value);
+              setDownloadReady(false);
+              setGeneratedSince("");
+              setStatusMessage("");
+            }}
+            style={{ marginTop: "0.5rem", width: "100%", padding: "0.25rem" }}
+          />
+          {isInventoryDateRangeInvalid && (
+            <p style={{ marginTop: "0.5rem", color: "#b91c1c" }}>
+              Start date must be on or before end date.
+            </p>
+          )}
+        </div>
+      )}
+
       <div style={{ display: "flex", gap: "0.5rem" }}>
         <button
           type="button"
           onClick={
             generatedSince && !downloadReady ? handleCheckStatus : handleGenerate
           }
-          disabled={!selectedReport || isGenerating}
+          disabled={
+            !selectedReport ||
+            isGenerating ||
+            (selectedReport === "inventory" && (!startDate || !endDate))
+          }
         >
           {isGenerating
             ? "Generating..."

@@ -1,7 +1,12 @@
 /* global process */
 
 export const action = async ({ request }) => {
-  const { workflow } = await request.json();
+  const body = await request.json();
+  const workflow = body?.workflow;
+  const startDate = body?.startDate;
+  const endDate = body?.endDate;
+  const start_date = body?.start_date || body?.["start-date"];
+  const end_date = body?.end_date || body?.["end-date"];
 
   if (!workflow) {
     return new Response(JSON.stringify({ error: "workflow is required" }), {
@@ -50,6 +55,26 @@ export const action = async ({ request }) => {
   }
 
   const dispatchWorkflow = async (workflowFile) => {
+    const inputs = {};
+    const startDateValue = startDate || start_date;
+    const endDateValue = endDate || end_date;
+
+    if (startDateValue) {
+      inputs["start-date"] = startDateValue;
+      inputs.start_date = startDateValue;
+      inputs.startDate = startDateValue;
+    }
+    if (endDateValue) {
+      inputs["end-date"] = endDateValue;
+      inputs.end_date = endDateValue;
+      inputs.endDate = endDateValue;
+    }
+
+    const body = { ref: "main" };
+    if (Object.keys(inputs).length) {
+      body.inputs = inputs;
+    }
+
     const response = await fetch(
       `https://api.github.com/repos/${owner}/${repo}/actions/workflows/${encodeURIComponent(
         workflowFile,
@@ -61,7 +86,7 @@ export const action = async ({ request }) => {
           Accept: "application/vnd.github+json",
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ ref: "main" }),
+        body: JSON.stringify(body),
       },
     );
 
