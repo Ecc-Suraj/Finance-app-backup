@@ -101,7 +101,36 @@ export const action = async ({ request }) => {
     );
 
     if (!response.ok) {
-      const text = await response.text();
+      const text = await response.text().catch(() => "");
+
+      // If inputs were unexpected, retry once without inputs so the workflow still runs.
+      if (response.status === 422 && /Unexpected inputs provided/.test(text)) {
+        const fallbackBody = { ref: "main" };
+        const fallbackResponse = await fetch(
+          `https://api.github.com/repos/${owner}/${repo}/actions/workflows/${encodeURIComponent(
+            workflowFile,
+          )}/dispatches`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept: "application/vnd.github+json",
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(fallbackBody),
+          },
+        );
+
+        if (!fallbackResponse.ok) {
+          const fbText = await fallbackResponse.text().catch(() => "");
+          throw new Error(
+            `GitHub workflow dispatch failed for ${workflowFile} (fallback): ${fallbackResponse.status} ${fbText}`,
+          );
+        }
+
+        return;
+      }
+
       throw new Error(
         `GitHub workflow dispatch failed for ${workflowFile}: ${response.status} ${text}`,
       );
