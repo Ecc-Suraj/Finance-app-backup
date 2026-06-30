@@ -12,7 +12,14 @@ export default function ReportsPage() {
   const [generatedSince, setGeneratedSince] = React.useState("");
   const [statusMessage, setStatusMessage] = React.useState("");
 
-  const dateRangeReports = ["inventory", "sales"];
+  const dateRangeReports = [
+    "inventory",
+    "sales",
+    "refund",
+    "Products",
+    "Payment",
+    "customers",
+  ];
 
   const isDateRangeIncomplete =
     dateRangeReports.includes(selectedReport) &&
@@ -207,6 +214,9 @@ export default function ReportsPage() {
           <option value="">Select a report</option>
           <option value="sales">Order Report</option>
           <option value="inventory">Ar report</option>
+          <option value="refund">Refund report</option>
+          <option value="Products">Product Master</option>
+          <option value="Payment">Payment report</option>
           <option value="customers">Partner Master</option>
         </select>
       </div>
@@ -229,7 +239,10 @@ export default function ReportsPage() {
             style={{ marginTop: "0.5rem", width: "100%", padding: "0.25rem" }}
           />
 
-          <label htmlFor="end-date" style={{ display: "block", marginTop: "1rem" }}>
+          <label
+            htmlFor="end-date"
+            style={{ display: "block", marginTop: "1rem" }}
+          >
             End date
           </label>
           <input
@@ -261,7 +274,9 @@ export default function ReportsPage() {
         <button
           type="button"
           onClick={
-            generatedSince && !downloadReady ? handleCheckStatus : handleGenerate
+            generatedSince && !downloadReady
+              ? handleCheckStatus
+              : handleGenerate
           }
           disabled={
             !selectedReport ||
